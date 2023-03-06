@@ -21,24 +21,36 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
     private final Context context;
     private static final int BYTES_PER_FLOAT = 4;
     private final FloatBuffer nativeVertexData;
-    private int uColorLocation, aPositionLocation, uPointSizeLocation;
+    private int aColorLocation, aPositionLocation, uPointSizeLocation;
     private static final int POSITION_COMPONENT_COUNT = 2;
+    private static final int COLOR_COMPONENT_COUNT = 3;
+    private static final int STRIDE =
+            (POSITION_COMPONENT_COUNT + COLOR_COMPONENT_COUNT) * BYTES_PER_FLOAT;
 
     public AirHockeyRenderer(Context context) {
         this.context = context;
 
         // Defining Java dalvik vertex data
+        float shade = 0.75f;
         float[] dalvikVertexData = {
-                -.5f, -.5f, .5f, .5f, -.5f, .5f, // first triangle
-                -.5f, -.5f, .5f, -.5f, .5f, .5f, // second triangle
-                -.5f, .0f, .5f, .0f, // middle line
-                .0f, -.25f, // first mallet
-                .0f, .25f, // second mallet
-                .0f, .0f, // puck
-                -.5f, -.5f, .5f, -.5f, // bottom line
-                .5f, -.5f, .5f, .5f, // right line
-                .5f, .5f, -.5f, .5f, // top line
-                -.5f, .5f, -.5f, -.5f, // left line
+                // Triangle fan - order of coordinates: x, y, R, G, B
+                .0f, .0f, 1f, 1f, 1f,
+                -.5f, -.5f, shade, shade, shade,
+                .5f, -.5f, shade, shade, shade,
+                .5f, .5f, shade, shade, shade,
+                -.5f, .5f, shade, shade, shade,
+                -.5f, -.5f, shade, shade, shade,
+
+                // Border:
+                -.5f, -.5f, .0f, .0f, .0f, .5f, -.5f, .0f, .0f, .0f, // bottom line
+                .5f, -.5f, .0f, .0f, .0f, .5f, .5f, .0f, .0f, .0f, // right line
+                .5f, .5f, .0f, .0f, .0f, -.5f, .5f, .0f, .0f, .0f,// top line
+                -.5f, .5f, .0f, .0f, .0f, -.5f, -.5f, .0f, .0f, .0f, // left line
+                -.5f, .0f, 1f, .0f, .0f, .5f, .0f, 1f, .0f, .0f, // middle line
+
+                .0f, -.25f, .0f, .0f, 1f, // first mallet
+                .0f, .25f, 1f, .0f, .0f, // second mallet
+                .0f, .0f, 1f, .0f, .0f // puck
         };
 
         // Copying dalvik vertex data to native vertex data
@@ -50,7 +62,7 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
-        glClearColor(.8f, 0.8f, 0.8f, 1.0f);
+        glClearColor(1f, 1f, 1f, 1f);
 
         String vertexShaderSource = TextResourceReader.readTextFileFromResource(
                 context, R.raw.simple_vertex_shader);
@@ -64,14 +76,19 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         if (LoggerConfig.ON) ShaderHelper.validateProgram(program);
         glUseProgram(program);
 
-        uColorLocation = glGetUniformLocation(program, "u_Color");
+        aColorLocation = glGetAttribLocation(program, "a_Color");
         aPositionLocation = glGetAttribLocation(program, "a_Position");
         uPointSizeLocation = glGetUniformLocation(program, "u_PointSize");
 
         nativeVertexData.position(0);
         glVertexAttribPointer(aPositionLocation, POSITION_COMPONENT_COUNT,
-                GL_FLOAT, false, 0, nativeVertexData);
+                GL_FLOAT, false, STRIDE, nativeVertexData);
         glEnableVertexAttribArray(aPositionLocation);
+
+        nativeVertexData.position(POSITION_COMPONENT_COUNT);
+        glVertexAttribPointer(aColorLocation, COLOR_COMPONENT_COUNT,
+                GL_FLOAT, false, STRIDE, nativeVertexData);
+        glEnableVertexAttribArray(aColorLocation);
     }
 
     @Override
@@ -84,27 +101,20 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Table
-        glUniform4f(uColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
-        // Middle separator
-        glUniform4f(uColorLocation, 1.0f, 0.0f, 0.0f, 1.0f);
-        glDrawArrays(GL_LINES, 6, 2);
-
-        // Mallets
-        glUniform1f(uPointSizeLocation, 50.0f);
-        glUniform4f(uColorLocation, 0.0f, 0.0f, 1.0f, 1.0f);
-        glDrawArrays(GL_POINTS, 8, 1);
-        glUniform4f(uColorLocation, 1.0f, 0.0f, 0.0f, 1.0f);
-        glDrawArrays(GL_POINTS, 9, 1);
-
-        // Puck
-        glUniform1f(uPointSizeLocation, 10.0f);
-        glDrawArrays(GL_POINTS, 10, 1);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 6);
 
         // Border
-        glUniform4f(uColorLocation, 0.0f, 0.0f, 0.0f, 1.0f);
-        glDrawArrays(GL_LINES, 11, 8);
+        glDrawArrays(GL_LINES, 6, 10);
+
+        // Mallets
+        glUniform1f(uPointSizeLocation, 50f);
+        glDrawArrays(GL_POINTS, 16, 1);
+        glDrawArrays(GL_POINTS, 17, 1);
+
+        // Puck
+        glUniform1f(uPointSizeLocation, 10f);
+        glDrawArrays(GL_POINTS, 18, 1);
+
     }
 
 }
