@@ -7,6 +7,7 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import static android.opengl.GLES20.*;
+import static android.opengl.Matrix.*;
 
 import com.vilip22.airhockey.utils.LoggerConfig;
 import com.vilip22.airhockey.utils.ShaderHelper;
@@ -21,7 +22,9 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
     private final Context context;
     private static final int BYTES_PER_FLOAT = 4;
     private final FloatBuffer nativeVertexData;
-    private int aColorLocation, aPositionLocation, uPointSizeLocation;
+    private final float[] projectionMatrix = new float[16];
+    private int uPointSizeLocation, uMatrixLocation;
+    private int aColorLocation, aPositionLocation;
     private static final int POSITION_COMPONENT_COUNT = 2;
     private static final int COLOR_COMPONENT_COUNT = 3;
     private static final int STRIDE =
@@ -34,21 +37,21 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         float[] dalvikVertexData = {
                 // Triangle fan - order of coordinates: x, y, R, G, B
                 .0f, .0f, .75f, .75f, .75f,
-                -.5f, -.5f, 1f, 1f, 1f,
-                .5f, -.5f, .5f, .5f, .5f,
-                .5f, .5f, .5f, .5f, .5f,
-                -.5f, .5f, 1f, 1f, 1f,
-                -.5f, -.5f, 1f, 1f, 1f,
+                -.5f, -.8f, 1f, 1f, 1f,
+                .5f, -.8f, .5f, .5f, .5f,
+                .5f, .8f, .5f, .5f, .5f,
+                -.5f, .8f, 1f, 1f, 1f,
+                -.5f, -.8f, 1f, 1f, 1f,
 
                 // Border:
-                -.5f, -.5f, .0f, .0f, .0f, .5f, -.5f, .0f, .0f, .0f, // bottom line
-                .5f, -.5f, .0f, .0f, .0f, .5f, .5f, .0f, .0f, .0f, // right line
-                .5f, .5f, .0f, .0f, .0f, -.5f, .5f, .0f, .0f, .0f,// top line
-                -.5f, .5f, .0f, .0f, .0f, -.5f, -.5f, .0f, .0f, .0f, // left line
+                -.5f, -.8f, .0f, .0f, .0f, .5f, -.8f, .0f, .0f, .0f, // bottom line
+                .5f, -.8f, .0f, .0f, .0f, .5f, .8f, .0f, .0f, .0f, // right line
+                .5f, .8f, .0f, .0f, .0f, -.5f, .8f, .0f, .0f, .0f,// top line
+                -.5f, .8f, .0f, .0f, .0f, -.5f, -.8f, .0f, .0f, .0f, // left line
                 -.5f, .0f, 1f, .0f, .0f, .5f, .0f, 1f, .0f, .0f, // middle line
 
-                .0f, -.25f, .0f, .0f, 1f, // first mallet
-                .0f, .25f, 1f, .0f, .0f, // second mallet
+                .0f, -.4f, .0f, .0f, 1f, // first mallet
+                .0f, .4f, 1f, .0f, .0f, // second mallet
                 .0f, .0f, 1f, .0f, .0f // puck
         };
 
@@ -78,6 +81,7 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         aColorLocation = glGetAttribLocation(program, "a_Color");
         aPositionLocation = glGetAttribLocation(program, "a_Position");
         uPointSizeLocation = glGetUniformLocation(program, "u_PointSize");
+        uMatrixLocation = glGetUniformLocation(program, "u_Matrix");
 
         nativeVertexData.position(0);
         glVertexAttribPointer(aPositionLocation, POSITION_COMPONENT_COUNT,
@@ -93,6 +97,16 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onSurfaceChanged(GL10 gl10, int width, int height) {
         glViewport(0, 0, width, height);
+
+        final float aspectRatio = width > height ?
+                (float) width / (float) height :
+                (float) height / (float) width;
+        if (width > height)
+            orthoM(projectionMatrix, 0, -aspectRatio, aspectRatio, -1f, 1f, -1f, 1f);
+        else
+            orthoM(projectionMatrix, 0, -1f, 1f, -aspectRatio, aspectRatio, -1f, 1f);
+
+        glUniformMatrix4fv(uMatrixLocation, 1, false, projectionMatrix, 0);
     }
 
     @Override
