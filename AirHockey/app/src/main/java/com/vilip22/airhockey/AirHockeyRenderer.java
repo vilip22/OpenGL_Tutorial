@@ -31,15 +31,14 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         this.context = context;
 
         // Defining Java dalvik vertex data
-        float shade = 0.75f;
         float[] dalvikVertexData = {
                 // Triangle fan - order of coordinates: x, y, R, G, B
-                .0f, .0f, 1f, 1f, 1f,
-                -.5f, -.5f, shade, shade, shade,
-                .5f, -.5f, shade, shade, shade,
-                .5f, .5f, shade, shade, shade,
-                -.5f, .5f, shade, shade, shade,
-                -.5f, -.5f, shade, shade, shade,
+                .0f, .0f, .75f, .75f, .75f,
+                -.5f, -.5f, 1f, 1f, 1f,
+                .5f, -.5f, .5f, .5f, .5f,
+                .5f, .5f, .5f, .5f, .5f,
+                -.5f, .5f, 1f, 1f, 1f,
+                -.5f, -.5f, 1f, 1f, 1f,
 
                 // Border:
                 -.5f, -.5f, .0f, .0f, .0f, .5f, -.5f, .0f, .0f, .0f, // bottom line
