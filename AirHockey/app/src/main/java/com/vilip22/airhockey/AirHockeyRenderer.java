@@ -25,7 +25,7 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
     private final float[] projectionMatrix = new float[16];
     private int uPointSizeLocation, uMatrixLocation;
     private int aColorLocation, aPositionLocation;
-    private static final int POSITION_COMPONENT_COUNT = 2;
+    private static final int POSITION_COMPONENT_COUNT = 4;
     private static final int COLOR_COMPONENT_COUNT = 3;
     private static final int STRIDE =
             (POSITION_COMPONENT_COUNT + COLOR_COMPONENT_COUNT) * BYTES_PER_FLOAT;
@@ -35,24 +35,34 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
 
         // Defining Java dalvik vertex data
         float[] dalvikVertexData = {
-                // Triangle fan - order of coordinates: x, y, R, G, B
-                .0f, .0f, .75f, .75f, .75f,
-                -.5f, -.8f, 1f, 1f, 1f,
-                .5f, -.8f, .5f, .5f, .5f,
-                .5f, .8f, .5f, .5f, .5f,
-                -.5f, .8f, 1f, 1f, 1f,
-                -.5f, -.8f, 1f, 1f, 1f,
+                // Triangle fan - order of coordinates: x, y, y, w, R, G, B
+                .0f, .0f, 0f, 1.5f, 1f, 1f, 1f,
+                -.5f, -.8f, 0f, 1f, .7f, .7f, .7f,
+                .5f, -.8f, 0f, 1f, .7f, .7f, .7f,
+                .5f, .8f, 0f, 2f, .7f, .7f, .7f,
+                -.5f, .8f, 0f, 2f, .7f, .7f, .7f,
+                -.5f, -.8f, 0f, 1f, .7f, .7f, .7f,
 
                 // Border:
-                -.5f, -.8f, .0f, .0f, .0f, .5f, -.8f, .0f, .0f, .0f, // bottom line
-                .5f, -.8f, .0f, .0f, .0f, .5f, .8f, .0f, .0f, .0f, // right line
-                .5f, .8f, .0f, .0f, .0f, -.5f, .8f, .0f, .0f, .0f,// top line
-                -.5f, .8f, .0f, .0f, .0f, -.5f, -.8f, .0f, .0f, .0f, // left line
-                -.5f, .0f, 1f, .0f, .0f, .5f, .0f, 1f, .0f, .0f, // middle line
+                // bottom line
+                -.5f, -.8f, 0f, 1f, .0f, .0f, .0f,
+                .5f, -.8f, 0f, 1f, .0f, .0f, .0f,
+                // right line
+                .5f, -.8f, 0f, 1f, .0f, .0f, .0f,
+                .5f, .8f, 0f, 2f, .0f, .0f, .0f,
+                // top line
+                .5f, .8f, 0f, 2f, .0f, .0f, .0f,
+                -.5f, .8f, 0f, 2f, .0f, .0f, .0f,
+                // left line
+                -.5f, .8f, 0f, 2f, .0f, .0f, .0f,
+                -.5f, -.8f, 0f, 1f, .0f, .0f, .0f,
+                // middle line
+                -.5f, .0f, 0f, 1.5f, 1f, .0f, .0f,
+                .5f, .0f, 0f, 1.5f, 1f, .0f, .0f,
 
-                .0f, -.4f, .0f, .0f, 1f, // first mallet
-                .0f, .4f, 1f, .0f, .0f, // second mallet
-                .0f, .0f, 1f, .0f, .0f // puck
+                .0f, -.4f, 0f, 1.25f, .0f, .0f, 1f, // first mallet
+                .0f, .4f, 0f, 1.75f, 1f, .0f, .0f, // second mallet
+                .0f, .0f, 0f, 1.5f, 0f, .0f, .0f // puck
         };
 
         // Copying dalvik vertex data to native vertex data
@@ -64,7 +74,7 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
-        glClearColor(1f, 1f, 1f, 1f);
+        glClearColor(1f, .5f, .2f, 1f);
 
         String vertexShaderSource = TextResourceReader.readTextFileFromResource(
                 context, R.raw.simple_vertex_shader);
@@ -102,9 +112,11 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
                 (float) width / (float) height :
                 (float) height / (float) width;
         if (width > height)
-            orthoM(projectionMatrix, 0, -aspectRatio, aspectRatio, -1f, 1f, -1f, 1f);
+            orthoM(projectionMatrix, 0, -aspectRatio, aspectRatio,
+                    -1f, 1f, -1f, 1f);
         else
-            orthoM(projectionMatrix, 0, -1f, 1f, -aspectRatio, aspectRatio, -1f, 1f);
+            orthoM(projectionMatrix, 0, -1f, 1f,
+                    -aspectRatio, aspectRatio, -1f, 1f);
 
         glUniformMatrix4fv(uMatrixLocation, 1, false, projectionMatrix, 0);
     }
@@ -120,12 +132,12 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         glDrawArrays(GL_LINES, 6, 10);
 
         // Mallets
-        glUniform1f(uPointSizeLocation, 50f);
+        glUniform1f(uPointSizeLocation, 10f);
         glDrawArrays(GL_POINTS, 16, 1);
         glDrawArrays(GL_POINTS, 17, 1);
 
         // Puck
-        glUniform1f(uPointSizeLocation, 10f);
+        glUniform1f(uPointSizeLocation, 5f);
         glDrawArrays(GL_POINTS, 18, 1);
 
     }
