@@ -10,6 +10,7 @@ import static android.opengl.GLES20.*;
 import static android.opengl.Matrix.*;
 
 import com.vilip22.airhockey.utils.LoggerConfig;
+import com.vilip22.airhockey.utils.MatrixHelper;
 import com.vilip22.airhockey.utils.ShaderHelper;
 import com.vilip22.airhockey.utils.TextResourceReader;
 
@@ -23,9 +24,10 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
     private static final int BYTES_PER_FLOAT = 4;
     private final FloatBuffer nativeVertexData;
     private final float[] projectionMatrix = new float[16];
+    private final float[] modelMatrix = new float[16];
     private int uPointSizeLocation, uMatrixLocation;
     private int aColorLocation, aPositionLocation;
-    private static final int POSITION_COMPONENT_COUNT = 4;
+    private static final int POSITION_COMPONENT_COUNT = 2;
     private static final int COLOR_COMPONENT_COUNT = 3;
     private static final int STRIDE =
             (POSITION_COMPONENT_COUNT + COLOR_COMPONENT_COUNT) * BYTES_PER_FLOAT;
@@ -36,33 +38,23 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         // Defining Java dalvik vertex data
         float[] dalvikVertexData = {
                 // Triangle fan - order of coordinates: x, y, y, w, R, G, B
-                .0f, .0f, 0f, 1.5f, 1f, 1f, 1f,
-                -.5f, -.8f, 0f, 1f, .7f, .7f, .7f,
-                .5f, -.8f, 0f, 1f, .7f, .7f, .7f,
-                .5f, .8f, 0f, 2f, .7f, .7f, .7f,
-                -.5f, .8f, 0f, 2f, .7f, .7f, .7f,
-                -.5f, -.8f, 0f, 1f, .7f, .7f, .7f,
+                .0f, .0f, 1f, 1f, 1f,
+                -.5f, -.8f, .7f, .7f, .7f,
+                .5f, -.8f, .7f, .7f, .7f,
+                .5f, .8f, .7f, .7f, .7f,
+                -.5f, .8f, .7f, .7f, .7f,
+                -.5f, -.8f, .7f, .7f, .7f,
 
                 // Border:
-                // bottom line
-                -.5f, -.8f, 0f, 1f, .0f, .0f, .0f,
-                .5f, -.8f, 0f, 1f, .0f, .0f, .0f,
-                // right line
-                .5f, -.8f, 0f, 1f, .0f, .0f, .0f,
-                .5f, .8f, 0f, 2f, .0f, .0f, .0f,
-                // top line
-                .5f, .8f, 0f, 2f, .0f, .0f, .0f,
-                -.5f, .8f, 0f, 2f, .0f, .0f, .0f,
-                // left line
-                -.5f, .8f, 0f, 2f, .0f, .0f, .0f,
-                -.5f, -.8f, 0f, 1f, .0f, .0f, .0f,
-                // middle line
-                -.5f, .0f, 0f, 1.5f, 1f, .0f, .0f,
-                .5f, .0f, 0f, 1.5f, 1f, .0f, .0f,
+                -.5f, -.8f, .0f, .0f, .0f, .5f, -.8f, .0f, .0f, .0f, // bottom line
+                .5f, -.8f, .0f, .0f, .0f, .5f, .8f, .0f, .0f, .0f, // right line
+                .5f, .8f, .0f, .0f, .0f, -.5f, .8f, .0f, .0f, .0f,// top line
+                -.5f, .8f, .0f, .0f, .0f, -.5f, -.8f, .0f, .0f, .0f, // left line
+                -.5f, .0f, 1f, .0f, .0f, .5f, .0f, 1f, .0f, .0f, // middle line
 
-                .0f, -.4f, 0f, 1.25f, .0f, .0f, 1f, // first mallet
-                .0f, .4f, 0f, 1.75f, 1f, .0f, .0f, // second mallet
-                .0f, .0f, 0f, 1.5f, 0f, .0f, .0f // puck
+                .0f, -.4f, .0f, .0f, 1f, // first mallet
+                .0f, .4f, 1f, .0f, .0f, // second mallet
+                .0f, .0f, 0f, .0f, .0f // puck
         };
 
         // Copying dalvik vertex data to native vertex data
@@ -117,6 +109,20 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         else
             orthoM(projectionMatrix, 0, -1f, 1f,
                     -aspectRatio, aspectRatio, -1f, 1f);
+
+        MatrixHelper.perspectiveM(projectionMatrix, 45,
+                (float) width / (float) height, 1f, 10f);
+
+        setIdentityM(modelMatrix, 0);
+        if (height > width)
+            translateM(modelMatrix, 0, 0f, 0f, -4f);
+        else
+            translateM(modelMatrix, 0, 0f, 0f, -2f);
+        rotateM(modelMatrix, 0, -60f, 1f, 0f, 0f);
+
+        float[] temp = new float[16];
+        multiplyMM(temp,0, projectionMatrix, 0, modelMatrix, 0);
+        System.arraycopy(temp, 0, projectionMatrix, 0, temp.length);
 
         glUniformMatrix4fv(uMatrixLocation, 1, false, projectionMatrix, 0);
     }
