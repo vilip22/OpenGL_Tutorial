@@ -31,6 +31,7 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
     private static final int COLOR_COMPONENT_COUNT = 3;
     private static final int STRIDE =
             (POSITION_COMPONENT_COUNT + COLOR_COMPONENT_COUNT) * BYTES_PER_FLOAT;
+    private float zRotation = 0f;
 
     public AirHockeyRenderer(Context context) {
         this.context = context;
@@ -146,6 +147,13 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         glUniform1f(uPointSizeLocation, 5f);
         glDrawArrays(GL_POINTS, 18, 1);
 
+        // Spin
+        setIdentityM(modelMatrix, 0);
+        rotateM(modelMatrix, 0, 1f, 0f, 0f, -1f);
+        float[] temp = new float[16];
+        multiplyMM(temp,0, projectionMatrix, 0, modelMatrix, 0);
+        System.arraycopy(temp, 0, projectionMatrix, 0, temp.length);
+        glUniformMatrix4fv(uMatrixLocation, 1, false, projectionMatrix, 0);
     }
 
 }
